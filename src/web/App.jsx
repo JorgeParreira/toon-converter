@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Copy, Check, Globe } from 'lucide-react';
 import { jsonToToon, toonToJson } from '../core/toonConverter';
+import { estimateTokens } from '../core/tokens';
 
 const t = {
   en: {
@@ -61,8 +62,6 @@ const t = {
   },
 };
 
-const estimateTokens = (text) => Math.max(0, Math.ceil(((text || '').length) / 4));
-
 export default function TOONConverter() {
   const [input, setInput] = useState(`{
   "context": {
@@ -106,9 +105,11 @@ export default function TOONConverter() {
 
   const output = useMemo(() => {
     if (activeTab === 'json-to-toon') {
-      return jsonToToon(input, lang);
+    let res = jsonToToon(input, lang);
+      return res.result;
     } else {
-      return toonToJson(input, lang);
+      let res = toonToJson(input, lang); 
+      return res.result;
     }
   }, [input, activeTab, lang]);
 

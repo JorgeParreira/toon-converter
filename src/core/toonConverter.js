@@ -1,3 +1,5 @@
+import { computeMeta } from './tokens.js';
+
 const IND = '  ';
 const isPrimitive = (v) => v === null || ['string', 'number', 'boolean'].includes(typeof v);
 const isPlainObject = (v) => v && typeof v === 'object' && !Array.isArray(v);
@@ -145,24 +147,36 @@ const jsonToToonRecursive = (key, val, level, lines) => {
 
 export function jsonToToon(jsonStr, lang = 'en') {
   try {
+    const warnings = [];
     const root = JSON.parse(jsonStr);
     const lines = [];
     if (isPlainObject(root)) {
+      warnings.push(lang === 'en' ? 'Root is an object, converting its keys to top-level entries' : 'A raiz é um objeto, a converter suas chaves para entradas de nível superior');
       for (const [k, v] of Object.entries(root)) {
         if (isPrimitive(v)) {
+          warnings.push(lang === 'en' ? `Key "${k}" is a primitive, converting to scalar entry` : `A chave "${k}" é um primitivo, a converter para entrada escalar`);
           lines.push(`${k}: ${scalarToTOON(v)}`);
         } else {
           jsonToToonRecursive(k, v, 0, lines);
         }
       }
     } else if (Array.isArray(root)) {
+      warnings.push(lang === 'en' ? 'Root is an array, converting to root array entry' : 'A raiz é um array, a converter para entrada de array raiz');
       jsonToToonRecursive('root', root, 0, lines);
     } else {
       lines.push(`root: ${scalarToTOON(root)}`);
     }
-    return lines.join('\n');
+    const result = lines.join('\n');
+    const meta = computeMeta(result);
+    meta.valid = true;
+    meta.warnings = warnings;
+    return { result, meta };
   } catch (e) {
-    return `Error: ${e.message}`;
+    const result = `Error: ${e.message}`;
+    const meta = computeMeta(result);
+    meta.valid = false;
+    meta.warnings = [result];
+    return { result, meta };
   }
 }
 
@@ -323,8 +337,18 @@ const detectToonDialect = (str) => (/^\s*SCHEMA:/im.test(str) ? 'schema' : 'stru
 export function toonToJson(toonStr, lang = 'en') {
   try {
     const dialect = detectToonDialect(toonStr || '');
-    return dialect === 'schema' ? parseSchemaData(toonStr, lang) : parseStructuredToJSON(toonStr);
+    const result = dialect === 'schema' ? parseSchemaData(toonStr, lang) : parseStructuredToJSON(toonStr);
+    const meta = computeMeta(result);
+    if (typeof result === 'string' && (/^Error:/i.test(result) || /^Invalid/i.test(result) || /^Formato inválido/i.test(result))) {
+      meta.valid = false;
+      meta.warnings = [result];
+    }
+    return { result, meta };
   } catch (e) {
-    return `Error: ${e.message}`;
+    const result = `Error: ${e.message}`;
+    const meta = computeMeta(result);
+    meta.valid = false;
+    meta.warnings = [result];
+    return { result, meta };
   }
 }

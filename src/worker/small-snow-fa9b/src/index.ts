@@ -12,13 +12,23 @@ export default {
         const obj = jsonToToon(JSON.stringify(body));
         const result = typeof obj === 'string' ? obj : (obj.result ?? obj.text ?? '');
         const meta = obj && typeof obj === 'object' && obj.meta ? obj.meta : computeMeta(result);
-        return new Response(JSON.stringify({ toon: result, meta }), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+        return new Response(JSON.stringify({ toon: result, meta }), 
+		{ headers: { 'Content-Type': 'application/json; charset=utf-8',
+			'Access-Control-Allow-Origin': '*',
+			'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+			'Access-Control-Allow-Headers': 'Content-Type'
+		} });
       } catch (e) {
         const result = `Error: ${e?.message || String(e)}`;
         const meta = computeMeta(result);
         meta.valid = false;
         meta.warnings = [result];
-        return new Response(JSON.stringify({ toon: result, meta }), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+        return new Response(JSON.stringify({ toon: result, meta }), 
+		{ headers: { 'Content-Type': 'application/json; charset=utf-8',
+			'Access-Control-Allow-Origin': '*',
+			'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+			'Access-Control-Allow-Headers': 'Content-Type'
+		 } });
       }
     }
 
